@@ -34,48 +34,22 @@ struct SettingsView: View {
                     }
                 }
                 
-                Toggle(isOn: $settings.localNetworkEnabled) {
-                    HStack {
-                        Image(systemName: "network")
-                            .foregroundColor(.green)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Local Network")
-                            Text("Discover devices on your network")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                }
-                
-                Toggle(isOn: $settings.bluetoothEnabled) {
-                    HStack {
-                        Image(systemName: "antenna.radiowaves.left.and.right")
-                            .foregroundColor(.blue)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Bluetooth")
-                            Text("Connect via Bluetooth Low Energy")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                }
-                
                 Toggle(isOn: $settings.appGroupsEnabled) {
                     HStack {
                         Image(systemName: "square.stack.3d.up.fill")
                             .foregroundColor(.purple)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("App Groups Sharing")
-                            Text("Share data with macOS app")
+                            Text("Sync with Mac App (Local)")
+                            Text("Share data with macOS app on same device")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
                     }
                 }
             } header: {
-                Text("Sync Transports")
+                Text("Sync with Mac App")
             } footer: {
-                Text("Enable sync transports to discover and control devices. CloudKit requires iCloud sign-in. Local Network and Bluetooth require appropriate permissions.")
+                Text("This iOS app acts as a remote control for the macOS SmartLights app. Enable CloudKit to sync across devices via iCloud. App Groups syncs with the Mac app on the same device.")
             }
             
             // Display Options Section
@@ -179,42 +153,24 @@ struct SettingsView: View {
                 HStack {
                     Image(systemName: syncManager.isConnectedViaCloud ? "checkmark.circle.fill" : "xmark.circle.fill")
                         .foregroundColor(syncManager.isConnectedViaCloud ? .green : .red)
-                    Text("CloudKit")
+                    Text("iCloud Sync")
                     Spacer()
                     Text(syncManager.isConnectedViaCloud ? "Connected" : "Disconnected")
                         .foregroundColor(.secondary)
                 }
                 
                 HStack {
-                    Image(systemName: syncManager.isConnectedViaLocalNetwork ? "checkmark.circle.fill" : "xmark.circle.fill")
-                        .foregroundColor(syncManager.isConnectedViaLocalNetwork ? .green : .red)
-                    Text("Local Network")
+                    Image(systemName: syncManager.isConnectedViaAppGroups ? "checkmark.circle.fill" : "xmark.circle.fill")
+                        .foregroundColor(syncManager.isConnectedViaAppGroups ? .green : .red)
+                    Text("Mac App (Local)")
                     Spacer()
-                    Text(syncManager.isConnectedViaLocalNetwork ? "Active" : "Inactive")
+                    Text(syncManager.isConnectedViaAppGroups ? "Synced" : "Not Synced")
                         .foregroundColor(.secondary)
-                }
-                
-                HStack {
-                    Image(systemName: syncManager.isConnectedViaBluetooth ? "checkmark.circle.fill" : "xmark.circle.fill")
-                        .foregroundColor(syncManager.isConnectedViaBluetooth ? .green : .red)
-                    Text("Bluetooth")
-                    Spacer()
-                    Text(syncManager.isConnectedViaBluetooth ? "Active" : "Inactive")
-                        .foregroundColor(.secondary)
-                }
-                
-                if !syncManager.discoveredPeers.isEmpty {
-                    HStack {
-                        Image(systemName: "network")
-                            .foregroundColor(.blue)
-                        Text("Discovered Peers")
-                        Spacer()
-                        Text("\(syncManager.discoveredPeers.count)")
-                            .foregroundColor(.secondary)
-                    }
                 }
             } header: {
-                Text("Connection Status")
+                Text("Sync Status")
+            } footer: {
+                Text("The iOS app is a remote control for the Mac app. Changes made here are synced to the Mac app, which controls the actual devices.")
             }
             
             // Actions Section

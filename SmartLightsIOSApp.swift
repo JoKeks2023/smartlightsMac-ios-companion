@@ -69,25 +69,19 @@ struct SmartLightsIOSApp: App {
     
     @MainActor
     private func initializeApp() async {
-        print("🔧 Initializing app...")
+        print("🔧 Initializing iOS companion app...")
+        print("📱 This app is a remote control for the macOS SmartLights app")
         
         // Enable App Groups by default (with UserDefaults fallback)
+        // This syncs with the Mac app on the same device
         await syncManager.enableTransport(.appGroups)
         
         // Check and enable CloudKit if available
+        // This syncs across devices via iCloud
         await syncManager.enableTransport(.cloud)
         
-        // Load settings and apply them
+        // Load settings
         let settings = await remoteControlClient.getSettings()
-        
-        // Enable other transports based on settings
-        if settings.localNetworkEnabled {
-            await syncManager.enableTransport(.localNetwork)
-        }
-        
-        if settings.bluetoothEnabled {
-            await syncManager.enableTransport(.bluetooth)
-        }
         
         // Add sample devices if store is empty (for first launch demo)
         if deviceStore.devices.isEmpty {

@@ -3,10 +3,12 @@
 //  SmartLights iOS Companion
 //
 //  Manages persistence and sync of devices/groups using App Groups and CloudKit.
-//  Implements local storage via App Groups (with UserDefaults fallback) and
-//  provides stubs for CloudKit integration.
-//
-//  TODO: See IOS_BRIDGE_DEVELOPER_GUIDE.md for full CloudKit implementation details.
+//  
+//  Architecture:
+//  - iOS App writes device states to App Groups (shared with macOS app)
+//  - macOS App monitors App Groups for changes and executes device commands
+//  - Both apps sync via CloudKit for cross-device updates
+//  - The macOS app is the source of truth for device discovery
 //
 
 import Foundation
@@ -169,60 +171,237 @@ public class CloudSyncManager: ObservableObject {
         }
     }
     
-    // MARK: - CloudKit Integration (Stubs)
+    // MARK: - CloudKit Integration
     
-    /// Fetch devices from CloudKit.
-    /// TODO: This is a stub. Implement full CloudKit fetch using CKDatabase queries.
-    /// See IOS_BRIDGE_DEVELOPER_GUIDE.md for CloudKit record structure and query examples.
+    /// Fetch devices from CloudKit
+    /// Syncs device state between iOS and macOS apps via iCloud
     public func fetchDevicesFromCloud() async throws -> [GoveeDevice] {
-        print("☁️ CloudKit fetch called (stub implementation)")
+        print("☁️ Fetching devices from CloudKit...")
         
-        // For now, return locally saved devices to provide some functionality
-        // In production, this should:
-        // 1. Query cloudKitContainer.privateCloudDatabase
-        // 2. Fetch CKRecord objects of type "GoveeDevice"
-        // 3. Convert CKRecords to GoveeDevice models
-        // 4. Handle pagination, errors, and conflicts
-        
-        // Stub: Return local devices
-        return try loadDevicesFromAppGroups()
-        
-        // TODO: Uncomment and implement real CloudKit fetch:
-        /*
         let database = cloudKitContainer.privateCloudDatabase
         let query = CKQuery(recordType: "GoveeDevice", predicate: NSPredicate(value: true))
-        let results = try await database.records(matching: query)
-        // Convert CKRecords to [GoveeDevice]
-        return convertedDevices
-        */
+        
+        do {
+            // Fetch records from CloudKit
+            let (matchResults, _) = try await database.records(matching: query)
+            
+            var devices: [GoveeDevice] = []
+            for (_, result) in matchResults {
+                switch result {
+                case .success(let record):
+                    if let device = try? convertRecordToDevice(record) {
+                        devices.append(device)
+                    }
+                case .failure(let error):
+                    print("⚠️ Failed to fetch record: \(error)")
+                }
+            }
+            
+            print("✅ Fetched \(devices.count) device(s) from CloudKit")
+            return devices
+        } catch {
+            print("❌ CloudKit fetch failed: \(error)")
+            // Fallback to local storage
+            print("📦 Falling back to local storage")
+            return try loadDevicesFromAppGroups()
+        }
     }
     
-    /// Save devices to CloudKit.
-    /// TODO: This is a stub. Implement full CloudKit save.
+    /// Save devices to CloudKit
+    /// Syncs device state from iOS app to macOS app via iCloud
     public func saveDevicesToCloud(_ devices: [GoveeDevice]) async throws {
-        print("☁️ CloudKit save called (stub implementation)")
+        print("☁️ Saving \(devices.count) device(s) to CloudKit...")
         
-        // For now, just save locally
+        // Always save to local storage first
         try saveDevicesToAppGroups(devices)
         
-        // TODO: Uncomment and implement real CloudKit save:
-        /*
         let database = cloudKitContainer.privateCloudDatabase
-        let records = devices.map { convertToCloudKitRecord($0) }
-        try await database.save(records)
-        */
+        let records = devices.map { convertDeviceToRecord($0) }
+        
+        do {
+            // Save records to CloudKit
+            let (saveResults, _) = try await database.modifyRecords(saving: records, deleting: [])
+            
+            var successCount = 0
+            for (_, result) in saveResults {
+                switch result {
+                case .success:
+                    successCount += 1
+                case .failure(let error):
+                    print("⚠️ Failed to save record: \(error)")
+                }
+            }
+            
+            print("✅ Saved \(successCount)/\(devices.count) device(s) to CloudKit")
+        } catch {
+            print("⚠️ CloudKit save failed: \(error)")
+            print("📦 Data saved to local storage only")
+            // Don't throw - local save succeeded
+        }
     }
     
-    /// Fetch groups from CloudKit (stub)
+    /// Fetch groups from CloudKit
     public func fetchGroupsFromCloud() async throws -> [DeviceGroup] {
-        print("☁️ CloudKit fetch groups called (stub)")
-        return try loadGroupsFromAppGroups()
+        print("☁️ Fetching groups from CloudKit...")
+        
+        let database = cloudKitContainer.privateCloudDatabase
+        let query = CKQuery(recordType: "DeviceGroup", predicate: NSPredicate(value: true))
+        
+        do {
+            let (matchResults, _) = try await database.records(matching: query)
+            
+            var groups: [DeviceGroup] = []
+            for (_, result) in matchResults {
+                switch result {
+                case .success(let record):
+                    if let group = try? convertRecordToGroup(record) {
+                        groups.append(group)
+                    }
+                case .failure(let error):
+                    print("⚠️ Failed to fetch group record: \(error)")
+                }
+            }
+            
+            print("✅ Fetched \(groups.count) group(s) from CloudKit")
+            return groups
+        } catch {
+            print("❌ CloudKit fetch groups failed: \(error)")
+            print("📦 Falling back to local storage")
+            return try loadGroupsFromAppGroups()
+        }
     }
     
-    /// Save groups to CloudKit (stub)
+    /// Save groups to CloudKit
     public func saveGroupsToCloud(_ groups: [DeviceGroup]) async throws {
-        print("☁️ CloudKit save groups called (stub)")
+        print("☁️ Saving \(groups.count) group(s) to CloudKit...")
+        
+        // Always save to local storage first
         try saveGroupsToAppGroups(groups)
+        
+        let database = cloudKitContainer.privateCloudDatabase
+        let records = groups.map { convertGroupToRecord($0) }
+        
+        do {
+            let (saveResults, _) = try await database.modifyRecords(saving: records, deleting: [])
+            
+            var successCount = 0
+            for (_, result) in saveResults {
+                switch result {
+                case .success:
+                    successCount += 1
+                case .failure(let error):
+                    print("⚠️ Failed to save group record: \(error)")
+                }
+            }
+            
+            print("✅ Saved \(successCount)/\(groups.count) group(s) to CloudKit")
+        } catch {
+            print("⚠️ CloudKit save groups failed: \(error)")
+            print("📦 Data saved to local storage only")
+        }
+    }
+    
+    // MARK: - CloudKit Record Conversion
+    
+    /// Convert CKRecord to GoveeDevice
+    private func convertRecordToDevice(_ record: CKRecord) throws -> GoveeDevice {
+        guard let id = record["id"] as? String,
+              let name = record["name"] as? String,
+              let model = record["model"] as? String else {
+            throw SyncError.decodingError(NSError(domain: "CloudKit", code: -1, userInfo: [NSLocalizedDescriptionKey: "Missing required fields"]))
+        }
+        
+        let isOnline = record["isOnline"] as? Int == 1
+        let powerState = record["powerState"] as? Int == 1
+        let brightness = record["brightness"] as? Int ?? 100
+        
+        let red = record["colorRed"] as? Int ?? 255
+        let green = record["colorGreen"] as? Int ?? 255
+        let blue = record["colorBlue"] as? Int ?? 255
+        let kelvin = record["colorKelvin"] as? Int
+        let color = DeviceColor(red: red, green: green, blue: blue, kelvin: kelvin)
+        
+        let capabilitiesString = record["capabilities"] as? String ?? "color,brightness"
+        let capabilities = capabilitiesString.components(separatedBy: ",")
+        
+        let lastSeen = record["lastSeen"] as? Date ?? Date()
+        let groupId = record["groupId"] as? String
+        
+        return GoveeDevice(
+            id: id,
+            name: name,
+            model: model,
+            isOnline: isOnline,
+            powerState: powerState,
+            brightness: brightness,
+            color: color,
+            capabilities: capabilities,
+            lastSeen: lastSeen,
+            groupId: groupId
+        )
+    }
+    
+    /// Convert GoveeDevice to CKRecord
+    private func convertDeviceToRecord(_ device: GoveeDevice) -> CKRecord {
+        let recordID = CKRecord.ID(recordName: "device-\(device.id)")
+        let record = CKRecord(recordType: "GoveeDevice", recordID: recordID)
+        
+        record["id"] = device.id as CKRecordValue
+        record["name"] = device.name as CKRecordValue
+        record["model"] = device.model as CKRecordValue
+        record["isOnline"] = (device.isOnline ? 1 : 0) as CKRecordValue
+        record["powerState"] = (device.powerState ? 1 : 0) as CKRecordValue
+        record["brightness"] = device.brightness as CKRecordValue
+        record["colorRed"] = device.color.red as CKRecordValue
+        record["colorGreen"] = device.color.green as CKRecordValue
+        record["colorBlue"] = device.color.blue as CKRecordValue
+        if let kelvin = device.color.kelvin {
+            record["colorKelvin"] = kelvin as CKRecordValue
+        }
+        record["capabilities"] = device.capabilities.joined(separator: ",") as CKRecordValue
+        record["lastSeen"] = device.lastSeen as CKRecordValue
+        if let groupId = device.groupId {
+            record["groupId"] = groupId as CKRecordValue
+        }
+        
+        return record
+    }
+    
+    /// Convert CKRecord to DeviceGroup
+    private func convertRecordToGroup(_ record: CKRecord) throws -> DeviceGroup {
+        guard let id = record["id"] as? String,
+              let name = record["name"] as? String else {
+            throw SyncError.decodingError(NSError(domain: "CloudKit", code: -1, userInfo: [NSLocalizedDescriptionKey: "Missing required fields"]))
+        }
+        
+        let deviceIdsString = record["deviceIds"] as? String ?? ""
+        let deviceIds = deviceIdsString.isEmpty ? [] : deviceIdsString.components(separatedBy: ",")
+        let icon = record["icon"] as? String
+        let createdAt = record["createdAt"] as? Date ?? Date()
+        
+        return DeviceGroup(
+            id: id,
+            name: name,
+            deviceIds: deviceIds,
+            icon: icon,
+            createdAt: createdAt
+        )
+    }
+    
+    /// Convert DeviceGroup to CKRecord
+    private func convertGroupToRecord(_ group: DeviceGroup) -> CKRecord {
+        let recordID = CKRecord.ID(recordName: "group-\(group.id)")
+        let record = CKRecord(recordType: "DeviceGroup", recordID: recordID)
+        
+        record["id"] = group.id as CKRecordValue
+        record["name"] = group.name as CKRecordValue
+        record["deviceIds"] = group.deviceIds.joined(separator: ",") as CKRecordValue
+        if let icon = group.icon {
+            record["icon"] = icon as CKRecordValue
+        }
+        record["createdAt"] = group.createdAt as CKRecordValue
+        
+        return record
     }
     
     /// Check CloudKit account status

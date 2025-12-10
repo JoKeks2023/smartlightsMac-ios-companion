@@ -19,25 +19,18 @@ struct ConnectionStatusView: View {
                     .foregroundColor(.blue)
             }
             
-            // Local network status
-            if syncManager.isConnectedViaLocalNetwork {
-                Image(systemName: "network")
+            // App Groups / Mac App status
+            if syncManager.isConnectedViaAppGroups {
+                Image(systemName: "laptopcomputer")
                     .font(.caption)
                     .foregroundColor(.green)
             }
             
-            // Bluetooth status
-            if syncManager.isConnectedViaBluetooth {
-                Image(systemName: "antenna.radiowaves.left.and.right")
-                    .font(.caption)
-                    .foregroundColor(.blue)
-            }
-            
-            // Offline indicator if nothing is connected
+            // Not synced indicator if nothing is connected
             if !syncManager.isAnyTransportConnected {
-                Image(systemName: "wifi.slash")
+                Image(systemName: "exclamationmark.triangle")
                     .font(.caption)
-                    .foregroundColor(.red)
+                    .foregroundColor(.orange)
             }
         }
         .padding(.horizontal, 8)
@@ -56,34 +49,25 @@ struct DetailedConnectionStatusView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Connection Status")
+            Text("Sync Status")
                 .font(.headline)
             
             HStack {
                 Image(systemName: "icloud.fill")
                     .foregroundColor(.blue)
                     .frame(width: 24)
-                Text("CloudKit")
+                Text("iCloud Sync")
                 Spacer()
                 statusIndicator(syncManager.isConnectedViaCloud)
             }
             
             HStack {
-                Image(systemName: "network")
+                Image(systemName: "laptopcomputer")
                     .foregroundColor(.green)
                     .frame(width: 24)
-                Text("Local Network")
+                Text("Mac App (Local)")
                 Spacer()
-                statusIndicator(syncManager.isConnectedViaLocalNetwork)
-            }
-            
-            HStack {
-                Image(systemName: "antenna.radiowaves.left.and.right")
-                    .foregroundColor(.blue)
-                    .frame(width: 24)
-                Text("Bluetooth")
-                Spacer()
-                statusIndicator(syncManager.isConnectedViaBluetooth)
+                statusIndicator(syncManager.isConnectedViaAppGroups)
             }
             
             Divider()
@@ -107,6 +91,11 @@ struct DetailedConnectionStatusView: View {
                 }
                 .font(.caption)
             }
+            
+            Text("The iOS app is a remote for the Mac app")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .padding(.top, 4)
         }
         .padding()
         .background(
@@ -119,9 +108,9 @@ struct DetailedConnectionStatusView: View {
     private func statusIndicator(_ isConnected: Bool) -> some View {
         HStack(spacing: 4) {
             Circle()
-                .fill(isConnected ? Color.green : Color.red)
+                .fill(isConnected ? Color.green : Color.orange)
                 .frame(width: 8, height: 8)
-            Text(isConnected ? "Connected" : "Disconnected")
+            Text(isConnected ? "Synced" : "Not Synced")
                 .font(.caption)
                 .foregroundColor(.secondary)
         }

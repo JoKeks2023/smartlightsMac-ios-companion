@@ -2,25 +2,24 @@
 //  MultiTransportSyncManager.swift
 //  SmartLights iOS Companion
 //
-//  Unified sync manager that coordinates multiple transport mechanisms:
-//  - CloudKit (cloud sync)
-//  - Local Network (Bonjour/mDNS)
-//  - Bluetooth (BLE)
-//  - App Groups (local sharing with macOS)
+//  Unified sync manager that coordinates data sync with the macOS app:
+//  - CloudKit: Cross-device sync via iCloud (both iOS and macOS)
+//  - App Groups: Local shared storage on same device (iOS <-> macOS)
 //
-//  This facade provides a simple API for enabling transports and checking connectivity.
-//  TODO: See IOS_COMPANION_GUIDE.md for details on implementing each transport.
+//  Note: The iOS app does NOT directly control devices. It updates shared storage,
+//  and the macOS app monitors these changes and executes device commands.
+//
+//  Architecture:
+//  iOS App (UI) -> Update App Groups/CloudKit -> macOS App monitors -> Device Control
 //
 
 import Foundation
 import Combine
 
-/// Transport types supported by the unified sync manager
+/// Transport types for syncing with macOS app
 public enum SyncTransport: String, CaseIterable {
-    case cloud = "CloudKit"
-    case localNetwork = "Local Network"
-    case bluetooth = "Bluetooth"
-    case appGroups = "App Groups"
+    case cloud = "CloudKit"         // iCloud sync between iOS and macOS
+    case appGroups = "App Groups"   // Local shared storage on same device
 }
 
 /// Unified sync manager that coordinates all sync transports.
@@ -32,14 +31,8 @@ public class MultiTransportSyncManager: ObservableObject {
     /// Whether CloudKit sync is active
     @Published public var isConnectedViaCloud: Bool = false
     
-    /// Whether local network discovery is active
-    @Published public var isConnectedViaLocalNetwork: Bool = false
-    
-    /// Whether Bluetooth discovery is active
-    @Published public var isConnectedViaBluetooth: Bool = false
-    
-    /// Discovered peer devices on local network (stub)
-    @Published public var discoveredPeers: [String] = []
+    /// Whether App Groups is available
+    @Published public var isConnectedViaAppGroups: Bool = false
     
     /// Current sync status message
     @Published public var statusMessage: String = "Idle"
@@ -83,10 +76,6 @@ public class MultiTransportSyncManager: ObservableObject {
         switch transport {
         case .cloud:
             await enableCloudSync()
-        case .localNetwork:
-            await enableLocalNetworkSync()
-        case .bluetooth:
-            await enableBluetoothSync()
         case .appGroups:
             await enableAppGroupsSync()
         }
@@ -102,13 +91,8 @@ public class MultiTransportSyncManager: ObservableObject {
         switch transport {
         case .cloud:
             isConnectedViaCloud = false
-        case .localNetwork:
-            isConnectedViaLocalNetwork = false
-            discoveredPeers = []
-        case .bluetooth:
-            isConnectedViaBluetooth = false
         case .appGroups:
-            break // Always available
+            isConnectedViaAppGroups = false
         }
     }
     
@@ -142,53 +126,6 @@ public class MultiTransportSyncManager: ObservableObject {
         }
     }
     
-    // MARK: - Local Network Transport (Stub)
-    
-    private func enableLocalNetworkSync() async {
-        statusMessage = "Starting local network discovery..."
-        
-        // TODO: Implement Bonjour/mDNS service discovery
-        // See IOS_COMPANION_GUIDE.md for NetService example
-        /*
-        1. Create NetServiceBrowser
-        2. Search for "_smartlights._tcp" service type
-        3. Resolve found services
-        4. Connect via socket/HTTP
-        5. Update discoveredPeers array
-        */
-        
-        // Stub: Simulate finding no peers on local network
-        let halfSecondInNanoseconds: UInt64 = 500_000_000
-        await Task.sleep(halfSecondInNanoseconds) // 0.5 seconds
-        isConnectedViaLocalNetwork = true
-        discoveredPeers = [] // No peers discovered in stub
-        statusMessage = "Local network active (no peers found)"
-        print("⚠️ Local network discovery is a stub. See IOS_COMPANION_GUIDE.md for implementation.")
-    }
-    
-    // MARK: - Bluetooth Transport (Stub)
-    
-    private func enableBluetoothSync() async {
-        statusMessage = "Starting Bluetooth discovery..."
-        
-        // TODO: Implement CoreBluetooth scanning
-        // See IOS_COMPANION_GUIDE.md for CoreBluetooth example
-        /*
-        1. Initialize CBCentralManager
-        2. Scan for peripherals with Govee service UUID
-        3. Connect to discovered peripherals
-        4. Subscribe to characteristics
-        5. Update isConnectedViaBluetooth
-        */
-        
-        // Stub: Bluetooth not implemented
-        let halfSecondInNanoseconds: UInt64 = 500_000_000
-        await Task.sleep(halfSecondInNanoseconds) // 0.5 seconds
-        isConnectedViaBluetooth = false
-        statusMessage = "Bluetooth not implemented"
-        print("⚠️ Bluetooth discovery is a stub. Requires CoreBluetooth implementation.")
-    }
-    
     // MARK: - App Groups Transport
     
     private func enableAppGroupsSync() async {
@@ -201,10 +138,13 @@ public class MultiTransportSyncManager: ObservableObject {
             await deviceStore?.replaceAllDevices(devices)
             await deviceStore?.replaceAllGroups(groups)
             
+            isConnectedViaAppGroups = true
             lastSyncTime = Date()
-            statusMessage = "Loaded from App Groups"
+            statusMessage = "Synced with Mac app via App Groups"
             print("✅ App Groups sync completed: \(devices.count) devices, \(groups.count) groups")
+            print("📱 iOS app is now synced with macOS app on this device")
         } catch {
+            isConnectedViaAppGroups = false
             statusMessage = "Failed to load from App Groups"
             print("❌ App Groups sync failed: \(error)")
         }
@@ -274,19 +214,18 @@ public class MultiTransportSyncManager: ObservableObject {
     /// Get a summary of connection status
     public var connectionSummary: String {
         var connections: [String] = []
-        if isConnectedViaCloud { connections.append("Cloud") }
-        if isConnectedViaLocalNetwork { connections.append("Local") }
-        if isConnectedViaBluetooth { connections.append("Bluetooth") }
+        if isConnectedViaCloud { connections.append("iCloud") }
+        if isConnectedViaAppGroups { connections.append("Mac App") }
         
         if connections.isEmpty {
-            return "Offline"
+            return "Not Synced"
         } else {
-            return connections.joined(separator: ", ")
+            return "Synced: " + connections.joined(separator: " + ")
         }
     }
     
     /// Check if any transport is connected
     public var isAnyTransportConnected: Bool {
-        isConnectedViaCloud || isConnectedViaLocalNetwork || isConnectedViaBluetooth
+        isConnectedViaCloud || isConnectedViaAppGroups
     }
 }

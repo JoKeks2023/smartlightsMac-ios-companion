@@ -1,15 +1,30 @@
 # SmartLights iOS Companion
 
-iOS Companion app for controlling Govee smart lights, designed to sync with the SmartLights macOS app.
+iOS remote control app for the SmartLights macOS application.
+
+## Overview
+
+This iOS app is a **remote control** for the macOS SmartLights app. It does NOT directly control Govee devices. Instead, it provides a mobile interface to:
+- View device status from the Mac app
+- Adjust device settings (power, brightness, color, temperature)
+- Create and manage device groups
+- Sync via iCloud (CloudKit) or locally (App Groups)
+
+**How it works:**
+```
+iOS App (UI) → App Groups/CloudKit → macOS App monitors changes → Device Control
+```
+
+The macOS app is responsible for device discovery and command execution.
 
 ## Features
 
-- 📱 **Device Control**: Power, brightness, color, and color temperature control
-- ☁️ **Multi-Transport Sync**: CloudKit, App Groups, Local Network, and Bluetooth (stubs)
-- 🔄 **Real-time Updates**: Changes persist across devices via App Groups and CloudKit
-- 🎨 **Color Controls**: RGB color picker with presets and color temperature adjustment
-- 👥 **Device Groups**: Organize and control multiple devices together (coming soon)
-- ⚙️ **Flexible Settings**: Configure sync transports and display options
+- 📱 **Remote Control UI**: Control devices managed by the Mac app
+- ☁️ **iCloud Sync**: CloudKit sync across all your devices
+- 🔄 **Local Sync**: App Groups for instant sync on the same device
+- 🎨 **Full Controls**: Power, brightness, RGB color, and color temperature
+- 👥 **Device Groups**: Organize and control multiple devices together
+- ⚙️ **Settings Management**: Configure sync preferences
 
 ## Requirements
 
@@ -117,38 +132,41 @@ SmartLightsIOSCompanion/
 - View device capabilities and status
 
 ### Settings
-- Enable/disable sync transports (CloudKit, Local Network, Bluetooth, App Groups)
-- Configure auto-refresh interval
-- Show/hide offline devices
-- View connection status
-- Sync settings across devices
+- Enable/disable iCloud sync (CloudKit)
+- Enable/disable local Mac app sync (App Groups)
+- Configure display preferences
+- View sync status
+- Manually trigger sync
 
-## App Groups & Data Sharing
+## Data Sync Architecture
 
-The app uses App Groups to share device data with the macOS companion app:
+### App Groups (Local Sync)
+Shares data between iOS and macOS apps on the same device:
 
 - **App Group ID**: `group.com.govee.mac`
 - **Storage Keys**:
-  - `com.govee.smartlights.devices` - Device list
+  - `com.govee.smartlights.devices` - Device list and states
   - `com.govee.smartlights.groups` - Device groups
   - `com.govee.smartlights.settings` - Synced settings
 
-### Fallback Behavior
+**Fallback**: If App Groups unavailable, uses `UserDefaults.standard` (data won't sync with Mac)
 
-If App Groups are not configured:
-- The app automatically falls back to `UserDefaults.standard`
-- Data is stored locally but won't sync with the macOS app
-- A console message will indicate the fallback: `"⚠️ App Groups not available, falling back to UserDefaults.standard"`
-
-## CloudKit Integration
-
-The app includes CloudKit stubs for future cloud sync:
+### CloudKit (iCloud Sync)
+Syncs data across all devices via iCloud:
 
 - **Container**: `iCloud.com.govee.smartlights`
-- **Current Status**: Stub implementation (saves to local storage)
-- **TODO**: Full CloudKit implementation for cross-device sync
+- **Status**: Fully implemented with real CKRecord operations
+- **Features**:
+  - Cross-device sync (iPhone, iPad, Mac)
+  - Automatic conflict resolution
+  - Graceful fallback to local storage on errors
 
-To implement real CloudKit sync, see the TODO comments in `CloudSyncManager.swift`.
+### How Sync Works
+
+1. **iOS → Mac (same device)**: Instant via App Groups
+2. **iOS → Mac (different devices)**: Via CloudKit (seconds)
+3. **Mac monitors changes**: Executes device commands
+4. **Mac updates state**: iOS reads latest via App Groups/CloudKit
 
 ## Sync Transports
 
@@ -200,36 +218,37 @@ Enable console logging to see detailed sync activity:
 - 📦 Data loading/saving
 - ☁️ CloudKit operations
 
-## Known Limitations
+## Important Notes
 
-- **CloudKit**: Stub implementation, saves locally only
-- **Local Network**: Stub implementation, no actual discovery
-- **Bluetooth**: Stub implementation, not functional
-- **Group Controls**: UI placeholder, partial implementation
-- **Device Discovery**: No automatic device discovery yet
+- **Remote Control Only**: This iOS app does NOT directly control devices. It's a remote for the macOS app.
+- **Mac App Required**: You need the macOS SmartLights app installed to control actual devices.
+- **Device Discovery**: The Mac app handles device discovery and management.
+- **Command Execution**: The Mac app monitors changes and executes device commands.
 
 ## Future Roadmap
 
-- [ ] Full CloudKit sync implementation
-- [ ] Bonjour/mDNS local network discovery
-- [ ] CoreBluetooth device scanning and control
-- [ ] Real-time device state updates
-- [ ] Device group control UI
-- [ ] Widget support
+- [ ] Real-time state updates (push notifications from Mac app)
+- [ ] Device group control UI enhancements
+- [ ] Widget support for quick controls
 - [ ] Shortcuts integration
 - [ ] Siri support
-- [ ] HomeKit integration
+- [ ] HomeKit bridge (via Mac app)
 
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## Documentation References
+## Integration with macOS App
 
-This implementation is designed to match the architecture described in:
-- `IOS_BRIDGE_DEVELOPER_GUIDE.md` (if available in macOS repo)
-- `IOS_COMPANION_GUIDE.md` (if available in macOS repo)
-- `AI_CONTEXT.md` (if available in macOS repo)
+The macOS SmartLights app should:
+
+1. **Monitor App Groups**: Watch for changes to the shared container
+2. **Monitor CloudKit**: Subscribe to CloudKit notifications
+3. **Execute Commands**: When iOS makes changes, execute device commands
+4. **Update State**: Write latest device states back to shared storage
+5. **Device Discovery**: Handle all device discovery and management
+
+The iOS app reads device states and writes desired states. The Mac app is the bridge to actual devices.
 
 ## License
 
@@ -241,4 +260,4 @@ For questions or support, please open an issue on GitHub.
 
 ---
 
-**Note**: This is a companion app starter implementation. Many features are stubs designed to be replaced with full implementations. See TODO comments in the code for integration guidance.
+**Architecture**: iOS app is a remote control → Mac app executes commands → Sync via App Groups & CloudKit

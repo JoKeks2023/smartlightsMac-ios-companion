@@ -92,7 +92,10 @@ public class DeviceStore: ObservableObject {
     /// Update device color temperature
     public func updateDeviceColorTemperature(deviceId: String, kelvin: Int) {
         guard let index = devices.firstIndex(where: { $0.id == deviceId }) else { return }
-        devices[index].color = DeviceColor(kelvin: kelvin)
+        // Preserve RGB values when updating kelvin to support devices with both modes
+        var updatedColor = devices[index].color
+        updatedColor.kelvin = kelvin
+        devices[index].color = updatedColor
         devices[index].lastSeen = Date()
     }
     

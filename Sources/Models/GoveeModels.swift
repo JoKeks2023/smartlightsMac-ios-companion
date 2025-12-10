@@ -35,10 +35,32 @@ public struct DeviceColor: Codable, Equatable, Hashable {
     }
     
     /// Initialize from color temperature only
+    /// Note: RGB values are set to approximate values based on Kelvin.
+    /// For accurate color representation, use the conversion utilities in DeviceColor+Extensions.
     public init(kelvin: Int) {
-        self.red = 255
-        self.green = 255
-        self.blue = 255
+        // Use a simple approximation for RGB based on kelvin
+        // For precise conversion, the DeviceColor+Extensions kelvinToUIColor is used in UI
+        if kelvin < 3000 {
+            // Warm (orange-ish)
+            self.red = 255
+            self.green = 180
+            self.blue = 107
+        } else if kelvin < 5000 {
+            // Neutral warm
+            self.red = 255
+            self.green = 220
+            self.blue = 180
+        } else if kelvin < 7000 {
+            // Neutral cool
+            self.red = 255
+            self.green = 240
+            self.blue = 220
+        } else {
+            // Cool (blue-ish)
+            self.red = 200
+            self.green = 220
+            self.blue = 255
+        }
         self.kelvin = kelvin
     }
     

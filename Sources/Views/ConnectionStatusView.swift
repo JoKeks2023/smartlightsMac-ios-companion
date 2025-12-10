@@ -132,7 +132,7 @@ struct ConnectionStatusView_Previews: PreviewProvider {
                         deviceStore: store
                     )
                     manager.isConnectedViaCloud = true
-                    manager.isConnectedViaLocalNetwork = true
+                    manager.isConnectedViaAppGroups = true
                     return manager
                 }())
             
@@ -146,8 +146,7 @@ struct ConnectionStatusView_Previews: PreviewProvider {
                         deviceStore: store
                     )
                     manager.isConnectedViaCloud = true
-                    manager.isConnectedViaLocalNetwork = false
-                    manager.isConnectedViaBluetooth = false
+                    manager.isConnectedViaAppGroups = false
                     manager.statusMessage = "CloudKit connected"
                     manager.lastSyncTime = Date()
                     return manager

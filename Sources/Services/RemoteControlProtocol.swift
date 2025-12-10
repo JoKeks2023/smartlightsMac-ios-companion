@@ -256,20 +256,10 @@ public class RemoteControlClient: RemoteControlProtocol {
             syncManager.disableTransport(.cloud)
         }
         
-        if settings.localNetworkEnabled {
-            await syncManager.enableTransport(.localNetwork)
-        } else {
-            syncManager.disableTransport(.localNetwork)
-        }
-        
-        if settings.bluetoothEnabled {
-            await syncManager.enableTransport(.bluetooth)
-        } else {
-            syncManager.disableTransport(.bluetooth)
-        }
-        
         if settings.appGroupsEnabled {
             await syncManager.enableTransport(.appGroups)
+        } else {
+            syncManager.disableTransport(.appGroups)
         }
     }
     

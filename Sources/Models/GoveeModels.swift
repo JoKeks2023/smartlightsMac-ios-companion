@@ -37,9 +37,11 @@ public struct DeviceColor: Codable, Equatable, Hashable {
     /// Initialize from color temperature only
     /// Note: RGB values are set to approximate values based on Kelvin.
     /// For accurate color representation, use the conversion utilities in DeviceColor+Extensions.
+    /// This is a simplified version for model initialization; the UI uses the precise kelvinToUIColor algorithm.
     public init(kelvin: Int) {
-        // Use a simple approximation for RGB based on kelvin
-        // For precise conversion, the DeviceColor+Extensions kelvinToUIColor is used in UI
+        // Use a simple approximation for RGB based on kelvin ranges
+        // This provides reasonable defaults without requiring Foundation imports in the model
+        // For precise conversion used in UI, see DeviceColor+Extensions.kelvinToUIColor()
         if kelvin < 3000 {
             // Warm (orange-ish)
             self.red = 255

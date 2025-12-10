@@ -27,7 +27,9 @@ struct SmartLightsIOSApp: App {
     // MARK: - Initialization
     
     init() {
-        // Create sync manager with device store
+        // Note: We create instances locally to properly initialize StateObjects
+        // SwiftUI requires StateObject initialization in init(), and we need the instances
+        // to wire dependencies. The same instances are wrapped and used throughout.
         let cloudSync = CloudSyncManager()
         let store = DeviceStore()
         let multiSync = MultiTransportSyncManager(
@@ -39,6 +41,7 @@ struct SmartLightsIOSApp: App {
             deviceStore: store
         )
         
+        // Wrap the same instances in StateObjects
         _cloudSyncManager = StateObject(wrappedValue: cloudSync)
         _deviceStore = StateObject(wrappedValue: store)
         _syncManager = StateObject(wrappedValue: multiSync)

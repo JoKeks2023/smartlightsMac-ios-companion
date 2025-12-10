@@ -158,7 +158,8 @@ public class MultiTransportSyncManager: ObservableObject {
         */
         
         // Stub: Simulate finding no peers on local network
-        await Task.sleep(500_000_000) // 0.5 seconds
+        let halfSecondInNanoseconds: UInt64 = 500_000_000
+        await Task.sleep(halfSecondInNanoseconds) // 0.5 seconds
         isConnectedViaLocalNetwork = true
         discoveredPeers = [] // No peers discovered in stub
         statusMessage = "Local network active (no peers found)"
@@ -181,7 +182,8 @@ public class MultiTransportSyncManager: ObservableObject {
         */
         
         // Stub: Bluetooth not implemented
-        await Task.sleep(500_000_000) // 0.5 seconds
+        let halfSecondInNanoseconds: UInt64 = 500_000_000
+        await Task.sleep(halfSecondInNanoseconds) // 0.5 seconds
         isConnectedViaBluetooth = false
         statusMessage = "Bluetooth not implemented"
         print("⚠️ Bluetooth discovery is a stub. Requires CoreBluetooth implementation.")

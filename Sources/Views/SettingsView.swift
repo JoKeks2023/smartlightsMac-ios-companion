@@ -241,13 +241,15 @@ struct SettingsView: View {
                     Text("1.0.0")
                 }
                 
-                Link(destination: URL(string: "https://github.com/JoKeks2023/smartlightsMac-ios-companion")!) {
-                    HStack {
-                        Image(systemName: "link")
-                        Text("GitHub Repository")
-                        Spacer()
-                        Image(systemName: "arrow.up.right.square")
-                            .font(.caption)
+                if let githubURL = URL(string: "https://github.com/JoKeks2023/smartlightsMac-ios-companion") {
+                    Link(destination: githubURL) {
+                        HStack {
+                            Image(systemName: "link")
+                            Text("GitHub Repository")
+                            Spacer()
+                            Image(systemName: "arrow.up.right.square")
+                                .font(.caption)
+                        }
                     }
                 }
             } header: {

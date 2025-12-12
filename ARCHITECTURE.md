@@ -50,7 +50,7 @@ The SmartLights iOS Companion is a SwiftUI-based application that provides remot
 │                                                             │
 │  • CloudSyncManager                                         │
 │    - App Groups persistence                                 │
-│    - CloudKit sync (stub)                                   │
+│    - CloudKit sync (fully implemented)                      │
 │    - UserDefaults fallback                                  │
 └─────────────────────────────────────────────────────────────┘
                             │
@@ -148,12 +148,14 @@ The SmartLights iOS Companion is a SwiftUI-based application that provides remot
 **CloudSyncManager**
 - Persistence layer
 - App Groups support with UserDefaults fallback
-- CloudKit stubs for future implementation
+- CloudKit fully implemented with real CKRecord operations
 - Methods:
   - `loadDevicesFromAppGroups()`, `saveDevicesToAppGroups()`
   - `loadGroupsFromAppGroups()`, `saveGroupsFromAppGroups()`
   - `loadSettings()`, `saveSettings()`
-  - `fetchDevicesFromCloud()` (stub)
+  - `fetchDevicesFromCloud()` (with CKQuery and record conversion)
+  - `saveDevicesToCloud()` (with batch CKRecord saves)
+  - `fetchGroupsFromCloud()`, `saveGroupsToCloud()`
   - `checkCloudKitStatus()`
 
 ### 4. Views (Presentation Layer)
@@ -266,11 +268,15 @@ MultiTransportSyncManager enables/disables transports
   - `com.govee.smartlights.settings` (JSON object)
 - **Fallback**: UserDefaults.standard if App Groups unavailable
 
-### 2. CloudKit (Stub) ⚠️
+### 2. CloudKit (Fully Implemented) ✅
 - **Purpose**: Cross-device sync via iCloud
-- **Status**: Stub implementation, saves locally
+- **Status**: Fully functional with real CKRecord operations
 - **Container**: `iCloud.com.govee.smartlights`
-- **TODO**: Implement CKRecord queries and saves
+- **Implementation**:
+  - CKQuery for fetching records
+  - Batch modifyRecords for saving
+  - CKRecord conversion for devices and groups
+  - Automatic fallback to local storage on errors
 
 ### 3. Local Network (Stub) ⚠️
 - **Purpose**: Discover devices via Bonjour/mDNS
@@ -363,10 +369,10 @@ MultiTransportSyncManager enables/disables transports
 ## Future Enhancements
 
 ### Short Term
-- [ ] Complete CloudKit implementation
 - [ ] Implement Local Network discovery
 - [ ] Add error alerts in UI
 - [ ] Add device group controls
+- [ ] Real device API integration
 
 ### Medium Term
 - [ ] Bluetooth device scanning

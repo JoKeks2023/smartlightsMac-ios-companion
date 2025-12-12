@@ -155,11 +155,13 @@ Shares data between iOS and macOS apps on the same device:
 Syncs data across all devices via iCloud:
 
 - **Container**: `iCloud.com.govee.smartlights`
-- **Status**: Fully implemented with real CKRecord operations
+- **Status**: ✅ Fully implemented with real CKRecord operations
 - **Features**:
   - Cross-device sync (iPhone, iPad, Mac)
   - Automatic conflict resolution
   - Graceful fallback to local storage on errors
+  - CKRecord queries for fetching devices and groups
+  - Batch save operations for efficient syncing
 
 ### How Sync Works
 
@@ -172,15 +174,16 @@ Syncs data across all devices via iCloud:
 
 The app supports multiple transport mechanisms:
 
-### 1. App Groups ✅ (Implemented)
+### 1. App Groups ✅ (Fully Implemented)
 - Shares data with macOS app locally
 - Instant sync on the same device
 - Fallback to UserDefaults if not configured
 
-### 2. CloudKit ⚠️ (Stub)
-- Designed for cross-device sync via iCloud
-- Currently saves to local storage
-- TODO: Implement CKRecord operations
+### 2. CloudKit ✅ (Fully Implemented)
+- Cross-device sync via iCloud
+- Real CKRecord operations for devices and groups
+- Automatic conflict resolution with graceful fallback
+- Requires iCloud account and CloudKit capability
 
 ### 3. Local Network ⚠️ (Stub)
 - For Bonjour/mDNS device discovery

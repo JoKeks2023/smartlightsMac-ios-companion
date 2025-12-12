@@ -52,7 +52,11 @@ All models are:
 - Load/save devices
 - Load/save groups
 - Load/save settings
-- CloudKit stubs (documented with TODOs)
+- CloudKit integration (fully implemented):
+  - CKQuery for fetching devices and groups
+  - Batch CKRecord saves with modifyRecords
+  - CKRecord to model conversion
+  - Automatic conflict resolution
 - CloudKit account status checking
 - Clear storage utility
 - Debug info logging
@@ -197,31 +201,25 @@ All models are:
 
 These features have the structure in place but need real implementations:
 
-### 1. CloudKit Sync
-- **Status**: Stub implementation
-- **Current behavior**: Saves to local storage
-- **Needs**: CKRecord queries, saves, conflict resolution
-- **Files**: `CloudSyncManager.swift` (marked with TODO)
-
-### 2. Local Network Discovery
+### 1. Local Network Discovery
 - **Status**: Stub implementation
 - **Current behavior**: Returns no peers
 - **Needs**: NetServiceBrowser, mDNS queries, HTTP/socket connection
 - **Files**: `MultiTransportSyncManager.swift` (marked with TODO)
 
-### 3. Bluetooth Discovery
+### 2. Bluetooth Discovery
 - **Status**: Stub implementation
 - **Current behavior**: Inactive
 - **Needs**: CoreBluetooth CBCentralManager, scanning, characteristic writes
 - **Files**: `MultiTransportSyncManager.swift` (marked with TODO)
 
-### 4. Real Device Control
+### 3. Real Device Control
 - **Status**: Updates local state only
 - **Current behavior**: Changes saved to storage but no actual device commands
 - **Needs**: HTTP API calls to devices, BLE writes, or macOS app relay
 - **Files**: `RemoteControlProtocol.swift` (marked with TODO)
 
-### 5. Device Group Controls UI
+### 4. Device Group Controls UI
 - **Status**: Placeholder view
 - **Current behavior**: Shows "coming soon" message
 - **Needs**: Full group list, group control interface
@@ -248,15 +246,15 @@ These features have the structure in place but need real implementations:
 ### On Device (with entitlements):
 All of the above, plus:
 1. ✅ App Groups sharing works (data visible to macOS app)
-2. ✅ CloudKit account status checking works
-3. ✅ Bluetooth/Local Network permissions can be requested
+2. ✅ CloudKit sync works (real CKRecord operations)
+3. ✅ CloudKit account status checking works
+4. ✅ Bluetooth/Local Network permissions can be requested
 
 ### What Doesn't Work Yet:
 1. ❌ Actual device control (no real API calls)
-2. ❌ Real CloudKit sync (stubs only)
-3. ❌ Local network device discovery
-4. ❌ Bluetooth device discovery
-5. ❌ Group control UI (placeholder only)
+2. ❌ Local network device discovery
+3. ❌ Bluetooth device discovery
+4. ❌ Group control UI (placeholder only)
 
 ## 🔧 How to Test
 
@@ -298,28 +296,21 @@ All of the above, plus:
 3. Add response handling and error states
 4. Test with real Govee devices
 
-### Priority 2: CloudKit Sync
-1. Design CKRecord schema for GoveeDevice and DeviceGroup
-2. Implement `fetchDevicesFromCloud()` with queries
-3. Implement `saveDevicesToCloud()` with batch saves
-4. Add conflict resolution strategy
-5. Test cross-device sync
-
-### Priority 3: Local Network Discovery
+### Priority 2: Local Network Discovery
 1. Implement NetServiceBrowser in `MultiTransportSyncManager`
 2. Search for `_smartlights._tcp` service
 3. Resolve discovered services
 4. Establish HTTP/socket connections
 5. Query device capabilities and state
 
-### Priority 4: Bluetooth Support
+### Priority 3: Bluetooth Support
 1. Implement CBCentralManager in `MultiTransportSyncManager`
 2. Define Govee BLE service UUIDs
 3. Scan for peripherals
 4. Connect and discover characteristics
 5. Write control commands to characteristics
 
-### Priority 5: Groups UI
+### Priority 4: Groups UI
 1. Create GroupListView
 2. Create GroupControlView
 3. Add group creation flow
@@ -375,10 +366,10 @@ All of the above, plus:
 - Tests: 1 file (5 tests)
 
 ### Features
-- Implemented: 90%
-- Stubbed: 10%
+- Implemented: 95%
+- Stubbed: 5%
 - Device control: 100% (UI/logic), 0% (actual API)
-- Persistence: 100% (local), 0% (cloud)
+- Persistence: 100% (local), 100% (cloud)
 - Discovery: 0% (network/BLE)
 
 ## 🎯 Summary

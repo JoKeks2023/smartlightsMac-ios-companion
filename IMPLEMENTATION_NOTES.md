@@ -344,7 +344,6 @@ All of the above, plus:
 
 ### Non-Issues (By Design)
 - App Groups fallback to UserDefaults: **Intentional**
-- CloudKit saves locally: **Stub, documented**
 - No actual device control: **Stub, documented**
 - Groups UI is placeholder: **Phase 2 feature**
 

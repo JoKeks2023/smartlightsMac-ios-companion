@@ -392,7 +392,7 @@ MultiTransportSyncManager enables/disables transports
 - SwiftUI - UI framework
 - Combine - Reactive programming
 - Foundation - Core utilities
-- CloudKit - Cloud sync (stub)
+- CloudKit - Cloud sync (fully implemented)
 - CoreBluetooth - BLE (TODO)
 - Network - Bonjour (TODO)
 

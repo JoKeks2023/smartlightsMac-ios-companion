@@ -1,32 +1,28 @@
 // swift-tools-version: 5.9
-// The swift-tools-version declares the minimum version of Swift required to build this package.
-
 import PackageDescription
 
 let package = Package(
     name: "SmartLightsIOSCompanion",
+    defaultLocalization: "en",
     platforms: [
         .iOS(.v15)
     ],
     products: [
-        .library(
+        .executable(
             name: "SmartLightsIOSCompanion",
             targets: ["SmartLightsIOSCompanion"]
-        ),
+        )
     ],
-    dependencies: [
-        // Add any external dependencies here
-    ],
+    dependencies: [],
     targets: [
-        .target(
+        .executableTarget(
             name: "SmartLightsIOSCompanion",
             dependencies: [],
-            path: "Sources"
-        ),
-        .testTarget(
-            name: "SmartLightsIOSCompanionTests",
-            dependencies: ["SmartLightsIOSCompanion"],
-            path: "Tests"
-        ),
+            path: "SmartLightsIOSCompanion",
+            resources: [
+                .process("Assets.xcassets"),
+                .process("Preview Content")
+            ]
+        )
     ]
 )
